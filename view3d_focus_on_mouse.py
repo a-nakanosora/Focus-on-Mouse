@@ -2,7 +2,7 @@ bl_info = {
     "name": "Focus on Mouse",
     "description": "Focus view on mouse",
     "author": "A Nakanosora",
-    "version": (0, 2, 0),
+    "version": (0, 2, 1),
     "blender": (2, 76, 0),
     "location": "Default Hotkey: Shift+Ctrl+Z  (Input -> 3D View -> Focus on Mouse)",
     "warning": "",
@@ -37,6 +37,7 @@ def focus_view_on(region_3d, location):
     mm = r3d.view_matrix.inverted()
 
     vr = mm.to_3x3()
+    nz1 = vr.transposed()[2]
     loc = mm.translation
 
     n = (a-loc).cross(b-loc).normalized()
@@ -48,12 +49,13 @@ def focus_view_on(region_3d, location):
     v = rot_on( zero, n, alp, v0 )
     w = rot_on( zero, n, alp, w0 )
 
-    vr2 = Matrix((u,v,w)).transposed()
-
     if bpy.context.user_preferences.inputs.view_rotate_method == 'TURNTABLE':
-        eu = vr2.to_euler()
-        eu.y = 0
-        vr2 = eu.to_matrix()
+        ez = Vector((0,0,1))
+        u2 = ez.cross(w)
+        v2 = w.cross(u2)
+        u,v = u2,v2
+
+    vr2 = Matrix((u,v,w)).transposed()
 
     mm2 = vr2.to_4x4()
     mm2[0][3] = loc[0]
@@ -147,6 +149,14 @@ class FocusMouseOperator(bpy.types.Operator):
     _modal_state = None
 
     def invoke(self, context, event):
+        def debug():
+            r3d = context.space_data.region_3d
+            prev_view_matrix = r3d.view_matrix.copy()
+            def restoreview():
+                r3d.view_matrix = prev_view_matrix.copy()
+            bpy.restoreview = restoreview
+        debug()
+
         if self._modal_state is not None:
             return {'CANCELLED'}
 
@@ -174,10 +184,17 @@ class FocusMouseOperator(bpy.types.Operator):
             t = min(1.0, (t1-self._t0)/self._TWEEN_TIME)
             self._modal_state.t = t
 
-            res = on_modal_tween(context, event, self._modal_state)
-            if res in [{'CANCELLED'}, {'FINISHED'}]:
+            try:
+                res = on_modal_tween(context, event, self._modal_state)
+                if res in [{'CANCELLED'}, {'FINISHED'}]:
+                    self.cancel(context)
+                return res
+            except Exception as e:
+                self.report({'WARNING'}, "Error on modal")
+                print(e)
                 self.cancel(context)
-            return res
+                return {'CANCELLED'}
+
         else:
             return {'RUNNING_MODAL'}
 
