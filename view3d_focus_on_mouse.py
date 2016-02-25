@@ -2,7 +2,7 @@ bl_info = {
     "name": "Focus on Mouse",
     "description": "Focus view on mouse",
     "author": "A Nakanosora",
-    "version": (0, 2, 1),
+    "version": (0, 2, 2),
     "blender": (2, 76, 0),
     "location": "Default Hotkey: Shift+Ctrl+Z  (Input -> 3D View -> Focus on Mouse)",
     "warning": "",
@@ -198,7 +198,7 @@ class FocusMouseOperator(bpy.types.Operator):
 
 def bind_hotkey():
     km = bpy.context.window_manager.keyconfigs.active.keymaps['3D View']
-    km.keymap_items.new(FocusMouseOperator.bl_idname, 'Z', 'PRESS', ctrl=True, shift=True)
+    km.keymap_items.new(FocusMouseOperator.bl_idname, 'Q', 'PRESS', ctrl=True, shift=True)
 
 def unbind_hotkey():
     km = bpy.context.window_manager.keyconfigs.active.keymaps['3D View']

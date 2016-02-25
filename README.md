@@ -7,9 +7,9 @@
 
 ## Installation
 
-Blender User Preferences > Install from File にて `view3d_focus_on_mouse.py` を選択。  
-ホットキー設定で`Focus on Mouse`が有効になります。  
-デフォルトでは`Shift+Ctrl+Z`キーに割り当てられます。
+Blender User Preferences > Install from File にて `view3d_focus_on_mouse.py` を選択。
+ホットキー設定で`Focus on Mouse`が有効になります。
+デフォルトでは`Shift+Ctrl+Q`キーに割り当てられます。
 
 <br>
 
@@ -23,6 +23,6 @@ Blenderに標準で用意されている似た機能に`Center View to Mouse`が
 
 ![image](https://raw.githubusercontent.com/wiki/a-nakanosora/blender-scripts/images/bl-focus-on-mouse/difference.gif)
 
-Focus on Mouse はビューの位置を変えずにアングルだけ変えるので、部分的に`Fly Mode`に似た挙動となっています。  
+Focus on Mouse はビューの位置を変えずにアングルだけ変えるので、部分的に`Fly Mode`に似た挙動となっています。
 広い建造物といった、遠くと近くとで奥行きが大きく異なるオブジェクト上でのビューの中心点の制御は`Center View to Mouse`だと
 挙動がピーキーになりやすいので、その時は`Focus on Mouse`を使ったほうがいいと思います。
