@@ -149,14 +149,6 @@ class FocusMouseOperator(bpy.types.Operator):
     _modal_state = None
 
     def invoke(self, context, event):
-        def debug():
-            r3d = context.space_data.region_3d
-            prev_view_matrix = r3d.view_matrix.copy()
-            def restoreview():
-                r3d.view_matrix = prev_view_matrix.copy()
-            bpy.restoreview = restoreview
-        debug()
-
         if self._modal_state is not None:
             return {'CANCELLED'}
 
