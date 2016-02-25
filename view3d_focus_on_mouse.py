@@ -151,6 +151,9 @@ class FocusMouseOperator(bpy.types.Operator):
     def invoke(self, context, event):
         if self._modal_state is not None:
             return {'CANCELLED'}
+        if context.space_data.type != 'VIEW_3D':
+            self.report({'WARNING'}, "Active space must be a View3d")
+            return {'CANCELLED'}
 
         hitloc, _, _ = get_nearest_object_under_mouse(context, event)
         if hitloc is None:
@@ -161,14 +164,10 @@ class FocusMouseOperator(bpy.types.Operator):
         self._modal_state.loc0 = r3d.view_location.copy()
         self.t = 0.0
 
-        if context.space_data.type == 'VIEW_3D':
-            self._timer = context.window_manager.event_timer_add(0.01, context.window)
-            self._t0 = time.time()
-            context.window_manager.modal_handler_add(self)
-            return {'RUNNING_MODAL'}
-        else:
-            self.report({'WARNING'}, "Active space must be a View3d")
-            return {'CANCELLED'}
+        self._timer = context.window_manager.event_timer_add(0.01, context.window)
+        self._t0 = time.time()
+        context.window_manager.modal_handler_add(self)
+        return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
         if event.type == 'TIMER':
