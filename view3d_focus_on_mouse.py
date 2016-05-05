@@ -2,9 +2,9 @@ bl_info = {
     "name": "Focus on Mouse",
     "description": "Focus view on mouse",
     "author": "A Nakanosora",
-    "version": (0, 2, 2),
-    "blender": (2, 76, 0),
-    "location": "Default Hotkey: Shift+Ctrl+Z  (Input -> 3D View -> Focus on Mouse)",
+    "version": (0, 3, 0),
+    "blender": (2, 77, 0),
+    "location": "Default Hotkey: Shift+Ctrl+Q  (Input -> 3D View -> Focus on Mouse)",
     "warning": "",
     "category": "3D View"
     }
@@ -37,7 +37,6 @@ def focus_view_on(region_3d, location):
     mm = r3d.view_matrix.inverted()
 
     vr = mm.to_3x3()
-    nz1 = vr.transposed()[2]
     loc = mm.translation
 
     n = (a-loc).cross(b-loc).normalized()
@@ -104,11 +103,12 @@ def get_nearest_object_under_mouse(context, event, ray_max=1000.0):
         matrix_inv = matrix.inverted()
         ray_origin_obj = matrix_inv * ray_origin
         ray_target_obj = matrix_inv * ray_target
+        ray_direction_obj = ray_target_obj - ray_origin_obj
 
-        hit, normal, face_index = obj.ray_cast(ray_origin_obj, ray_target_obj)
+        success, location, normal, face_index = obj.ray_cast(ray_origin_obj, ray_direction_obj)
 
-        if face_index != -1:
-            return hit, normal, face_index
+        if success:
+            return location, normal, face_index
         else:
             return None, None, None
 
@@ -145,12 +145,14 @@ class FocusMouseOperator(bpy.types.Operator):
 
     _timer = None
     _t0 = -1
+
     _TWEEN_TIME = 0.2
     _modal_state = None
 
     def invoke(self, context, event):
         if self._modal_state is not None:
             return {'CANCELLED'}
+
         if context.space_data.type != 'VIEW_3D':
             self.report({'WARNING'}, "Active space must be a View3d")
             return {'CANCELLED'}
@@ -158,6 +160,7 @@ class FocusMouseOperator(bpy.types.Operator):
         hitloc, _, _ = get_nearest_object_under_mouse(context, event)
         if hitloc is None:
             return {'CANCELLED'}
+
         r3d = context.space_data.region_3d
         self._modal_state = ModalState()
         self._modal_state.hitloc = hitloc
@@ -165,6 +168,7 @@ class FocusMouseOperator(bpy.types.Operator):
         self.t = 0.0
 
         self._timer = context.window_manager.event_timer_add(0.01, context.window)
+
         self._t0 = time.time()
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
