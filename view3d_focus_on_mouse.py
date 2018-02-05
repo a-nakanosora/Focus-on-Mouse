@@ -2,7 +2,7 @@ bl_info = {
     "name": "Focus on Mouse",
     "description": "Focus view on mouse",
     "author": "A Nakanosora",
-    "version": (0, 3, 0),
+    "version": (0, 4, 0),
     "blender": (2, 77, 0),
     "location": "Default Hotkey: Shift+Ctrl+Q  (Input -> 3D View -> Focus on Mouse)",
     "warning": "",
@@ -104,7 +104,6 @@ def get_nearest_object_under_mouse(context, event, ray_max=1000.0):
         ray_origin_obj = matrix_inv * ray_origin
         ray_target_obj = matrix_inv * ray_target
         ray_direction_obj = ray_target_obj - ray_origin_obj
-
         success, location, normal, face_index = obj.ray_cast(ray_origin_obj, ray_direction_obj)
 
         if success:
@@ -145,33 +144,42 @@ class FocusMouseOperator(bpy.types.Operator):
 
     _timer = None
     _t0 = -1
-
     _TWEEN_TIME = 0.2
     _modal_state = None
 
+    @classmethod
+    def poll(cls, context):
+        return context.area.type == 'VIEW_3D'
+
     def invoke(self, context, event):
-        if self._modal_state is not None:
+        current_view_type = context.space_data.region_3d.view_perspective
+        if current_view_type == 'PERSP':
+            if self._modal_state is not None:
+                return {'CANCELLED'}
+
+            if context.space_data.type != 'VIEW_3D':
+                self.report({'WARNING'}, "Active space must be a View3d")
+                return {'CANCELLED'}
+
+            hitloc, _, _ = get_nearest_object_under_mouse(context, event)
+            if hitloc is None:
+                return {'CANCELLED'}
+
+            r3d = context.space_data.region_3d
+            self._modal_state = ModalState()
+            self._modal_state.hitloc = hitloc
+            self._modal_state.loc0 = r3d.view_location.copy()
+            self.t = 0.0
+
+            self._timer = context.window_manager.event_timer_add(0.01, context.window)
+            self._t0 = time.time()
+            context.window_manager.modal_handler_add(self)
+            return {'RUNNING_MODAL'}
+        elif current_view_type == 'ORTHO':
+            bpy.ops.view3d.view_center_pick('INVOKE_DEFAULT')
+            return {'FINISHED'}
+        else:
             return {'CANCELLED'}
-
-        if context.space_data.type != 'VIEW_3D':
-            self.report({'WARNING'}, "Active space must be a View3d")
-            return {'CANCELLED'}
-
-        hitloc, _, _ = get_nearest_object_under_mouse(context, event)
-        if hitloc is None:
-            return {'CANCELLED'}
-
-        r3d = context.space_data.region_3d
-        self._modal_state = ModalState()
-        self._modal_state.hitloc = hitloc
-        self._modal_state.loc0 = r3d.view_location.copy()
-        self.t = 0.0
-
-        self._timer = context.window_manager.event_timer_add(0.01, context.window)
-
-        self._t0 = time.time()
-        context.window_manager.modal_handler_add(self)
-        return {'RUNNING_MODAL'}
 
     def modal(self, context, event):
         if event.type == 'TIMER':
